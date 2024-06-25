@@ -11,17 +11,41 @@ on:
 #Джобы. Их может быть несколько
 jobs:
   build:
-#на чём запускается. опция ниже — басплатная для опенсорса
+    #на чём запускается. опция ниже — басплатная для опенсорса
     runs-on: ubuntu-latest
     permissions:
       contents: read
 
-#uses как плагины
+    #uses как плагины
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up JDK 21
-      uses: actions/setup-java@v4
-      with:
-        java-version: '21'
-        distribution: 'temurin'
-    - run: ./gradlew clean test
+      - uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - run: ./gradlew clean test
+
+        #копирование истории
+      - name: Copy History
+        uses: actions/checkout@v2
+        if: always()
+        with:
+          ref: gh-pages
+          path: gh-pages
+
+          #построение Allure-отчёта
+      - name: Build Report
+        uses: simple-elf/allure-report-action@v1.7
+        if: always()
+        with:
+          allure_results: build/allure-results
+          allure_history: allure-history
+          keep_reports: 20
+      - name: Publish Report
+        if: always()
+        uses: peaceiris/actions-gh-pages@v2
+        env:
+          PERSONAL_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PUBLISH_BRANCH: gh-pages
+          PUBLISH_DIR: allure-history
